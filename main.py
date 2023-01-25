@@ -14,7 +14,7 @@ UUID_TEMP_CHARACT = "ebe0ccc1-7a0a-4b0c-8a1a-6ff2997da3a6"
 async def notification_handler(characteristic: BleakGATTCharacteristic, data: bytearray):
     """Simple notification handler which prints the data received."""
     #print(characteristic.properties,characteristic.service_uuid,characteristic.uuid)
-    print(mac,characteristic.description, (data[0] | (data[1] << 8)) * 0.01 , data[2]*1)
+    print(mac,characteristic.description, (data[0] | (data[1] << 8)) * 0.01 ,"C", data[2]*1, "%", data[3] | (data[4] << 8),"mV" )
     stop_event.set()
 
 
@@ -44,18 +44,23 @@ async def connect(device):
             await client.disconnect()
 
 async def main():
+    scannedList = []
     while True:
-        devices:list[BLEDevice] = await BleakScanner.discover(timeout=13)
+        devices:list[BLEDevice] = await BleakScanner.discover(timeout=15)
         for d in devices:
             dev:BLEDevice = d
-            #print(dev)
-            try:
-                n:str = dev.name
-                if(n is not None):
-                    if("LYW" in n ):
-                        print("Found")
+            print(d)
+        for d in devices:
+            dev:BLEDevice = d
+            n:str = dev.name
+            if(n is not None):
+                if("LYW" in n ):
+                    if(d.address not in scannedList):
+                        print(dev,"->Found")
                         await connect(d)
-            except:
-                print("boom")
+                        scannedList.append(d.address)
+        
+        await asyncio.sleep(1.0)
+        print("scanning again")
         
 asyncio.run(main())
